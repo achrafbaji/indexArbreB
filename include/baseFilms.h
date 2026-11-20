@@ -67,6 +67,27 @@ class BaseFilms{
     bool lire(long long position, Film& film) const;
 
     /**
+     * Ajoute un film à la table.
+     *
+     * @param film film à ajouter
+     * @return la position (rowid) donnée au film par SQLite
+     * @throws std::runtime_error si l'insertion échoue
+     */
+    long long ajouter(const Film& film);
+
+    /**
+     * Supprime le film rangé à une position donnée.
+     *
+     * @param position rowid du film dans la table
+     * @return true si un film a été supprimé, false s'il n'y avait aucun film
+     * @throws std::runtime_error si la suppression échoue
+     */
+    bool supprimer(long long position);
+
+
+
+
+    /**
      * Lit l'id et la position de tous les films, pour construire l'index.
      *
      * @return une entrée par film de la table

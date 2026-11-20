@@ -74,6 +74,39 @@ bool BaseFilms::lire(long long position, Film& film) const{
     return trouve;
 }
 
+long long BaseFilms::ajouter(const Film& film){
+    sqlite3_stmt* requete = nullptr;
+    if(sqlite3_prepare_v2(db,
+           "INSERT INTO films(id, titre, titre_original, annee, duree, genres) "
+           "VALUES(?, ?, ?, ?, ?, ?)", -1, &requete, nullptr) != SQLITE_OK)
+        throw erreur("préparation de l'ajout");
+    sqlite3_bind_int(requete, 1, film.id);
+    sqlite3_bind_text(requete, 2, film.titre.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(requete, 3, film.titreOriginal.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(requete, 4, film.annee);
+    sqlite3_bind_int(requete, 5, film.duree);
+    sqlite3_bind_text(requete, 6, film.genres.c_str(), -1, SQLITE_TRANSIENT);
+    bool reussi = sqlite3_step(requete) == SQLITE_DONE;
+    sqlite3_finalize(requete);
+    if(!reussi)
+        throw erreur("ajout du film " + std::to_string(film.id));
+    return sqlite3_last_insert_rowid(db);
+}
+
+bool BaseFilms::supprimer(long long position){
+    sqlite3_stmt* requete = nullptr;
+    if(sqlite3_prepare_v2(db, "DELETE FROM films WHERE rowid = ?", -1, &requete, nullptr) != SQLITE_OK)
+        throw erreur("préparation de la suppression");
+    sqlite3_bind_int64(requete, 1, position);
+    bool reussi = sqlite3_step(requete) == SQLITE_DONE;
+    sqlite3_finalize(requete);
+    if(!reussi)
+        throw erreur("suppression de la position " + std::to_string(position));
+    return sqlite3_changes(db) > 0;
+}
+
+
+
 std::vector<Entree> BaseFilms::lireEntrees() const{
     sqlite3_stmt* requete = nullptr;
     if(sqlite3_prepare_v2(db, "SELECT id, rowid FROM films", -1, &requete, nullptr) != SQLITE_OK)

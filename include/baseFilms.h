@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <sqlite3.h>
+#include "entree.h"
 #include "film.h"
 
 /**
@@ -64,6 +65,14 @@ class BaseFilms{
      * @throws std::runtime_error si la requête échoue
      */
     bool lire(long long position, Film& film) const;
+
+    /**
+     * Lit l'id et la position de tous les films, pour construire l'index.
+     *
+     * @return une entrée par film de la table
+     * @throws std::runtime_error si la requête échoue
+     */
+    std::vector<Entree> lireEntrees() const;
 
   private:
     sqlite3* db;

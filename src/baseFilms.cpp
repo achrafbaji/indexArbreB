@@ -74,6 +74,17 @@ bool BaseFilms::lire(long long position, Film& film) const{
     return trouve;
 }
 
+std::vector<Entree> BaseFilms::lireEntrees() const{
+    sqlite3_stmt* requete = nullptr;
+    if(sqlite3_prepare_v2(db, "SELECT id, rowid FROM films", -1, &requete, nullptr) != SQLITE_OK)
+        throw erreur("lecture des entrées");
+    std::vector<Entree> entrees;
+    while(sqlite3_step(requete) == SQLITE_ROW)
+        entrees.push_back(Entree(sqlite3_column_int(requete, 0), sqlite3_column_int64(requete, 1)));
+    sqlite3_finalize(requete);
+    return entrees;
+}
+
 void BaseFilms::executer(const std::string& sql){
     if(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr) != SQLITE_OK)
         throw erreur(sql);

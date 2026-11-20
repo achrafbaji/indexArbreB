@@ -8,8 +8,26 @@ class ArbreB{
         ArbreB(int ordre);
         ~ArbreB();
 
+        /**
+         * Copie interdite : deux arbres partageraient les mêmes noeuds.
+         */
+        ArbreB(const ArbreB&) = delete;
+
+        /**
+         * Affectation interdite : deux arbres partageraient les mêmes noeuds.
+         */
+        ArbreB& operator=(const ArbreB&) = delete;
+
         bool estVide() const;
         bool contient(const T& element) const;
+
+        /**
+         * Cherche une clé égale à cle et donne accès à la clé stockée dans l'arbre.
+         *
+         * @param cle clé à chercher, comparée seulement avec l'opérateur <
+         * @return un pointeur vers la clé stockée, nullptr si elle est absente
+         */
+        const T* rechercher(const T& cle) const;
         void inserer(const T& element);
         void enlever(const T& element);
     
@@ -98,6 +116,20 @@ bool ArbreB<T>::contient(const T& cle) const{
         n = n->enfants[i];                           
     }
     return false;                                     
+}
+
+template <class T>
+const T* ArbreB<T>::rechercher(const T& cle) const{
+    Noeud* n = racine;
+    while(n != nullptr){
+        int i = 0;
+        while(i < n->nbCles && n->cles[i] < cle)
+            i++;
+        if(i < n->nbCles && !(cle < n->cles[i]))
+            return &n->cles[i];
+        n = n->enfants[i];
+    }
+    return nullptr;
 }
 
 //inserer

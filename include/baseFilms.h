@@ -67,6 +67,32 @@ class BaseFilms{
     bool lire(long long position, Film& film) const;
 
     /**
+     * Cherche un film par son id avec une requête SQL, sans passer par l'arbre B.
+     *
+     * Sans index SQLite sur la colonne id, SQLite parcourt toute la table.
+     *
+     * @param id id du film à chercher
+     * @param film reçoit le film trouvé
+     * @return true si un film a cet id, false sinon
+     * @throws std::runtime_error si la requête échoue
+     */
+    bool chercherParId(int id, Film& film) const;
+
+    /**
+     * Crée l'index de SQLite sur la colonne id, pour comparer avec l'arbre B.
+     *
+     * @throws std::runtime_error si la création échoue
+     */
+    void creerIndexSQLite();
+
+    /**
+     * Supprime l'index de SQLite sur la colonne id.
+     *
+     * @throws std::runtime_error si la suppression échoue
+     */
+    void supprimerIndexSQLite();
+
+    /**
      * Ajoute un film à la table.
      *
      * @param film film à ajouter

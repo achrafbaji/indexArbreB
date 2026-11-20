@@ -74,6 +74,34 @@ bool BaseFilms::lire(long long position, Film& film) const{
     return trouve;
 }
 
+bool BaseFilms::chercherParId(int id, Film& film) const{
+    sqlite3_stmt* requete = nullptr;
+    if(sqlite3_prepare_v2(db,
+           "SELECT id, titre, titre_original, annee, duree, genres "
+           "FROM films WHERE id = ?", -1, &requete, nullptr) != SQLITE_OK)
+        throw erreur("recherche par id");
+    sqlite3_bind_int(requete, 1, id);
+
+    bool trouve = sqlite3_step(requete) == SQLITE_ROW;
+    if(trouve)
+        film = Film(sqlite3_column_int(requete, 0),
+                    reinterpret_cast<const char*>(sqlite3_column_text(requete, 1)),
+                    reinterpret_cast<const char*>(sqlite3_column_text(requete, 2)),
+                    sqlite3_column_int(requete, 3),
+                    sqlite3_column_int(requete, 4),
+                    reinterpret_cast<const char*>(sqlite3_column_text(requete, 5)));
+    sqlite3_finalize(requete);
+    return trouve;
+}
+
+void BaseFilms::creerIndexSQLite(){
+    executer("CREATE INDEX IF NOT EXISTS index_id ON films(id)");
+}
+
+void BaseFilms::supprimerIndexSQLite(){
+    executer("DROP INDEX IF EXISTS index_id");
+}
+
 long long BaseFilms::ajouter(const Film& film){
     sqlite3_stmt* requete = nullptr;
     if(sqlite3_prepare_v2(db,

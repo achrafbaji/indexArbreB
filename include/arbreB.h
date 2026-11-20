@@ -28,6 +28,14 @@ class ArbreB{
          * @return un pointeur vers la clé stockée, nullptr si elle est absente
          */
         const T* rechercher(const T& cle) const;
+
+        /**
+         * Calcule la hauteur de l'arbre, c'est-à-dire le nombre de noeuds lus
+         * par une recherche qui descend jusqu'à une feuille.
+         *
+         * @return le nombre de niveaux, 0 si l'arbre est vide
+         */
+        int hauteur() const;
         void inserer(const T& element);
         void enlever(const T& element);
     
@@ -130,6 +138,14 @@ const T* ArbreB<T>::rechercher(const T& cle) const{
         n = n->enfants[i];
     }
     return nullptr;
+}
+
+template <class T>
+int ArbreB<T>::hauteur() const{
+    int h = 0;
+    for(Noeud* n = racine; n != nullptr; n = n->enfants[0])
+        h++;
+    return h;
 }
 
 //inserer

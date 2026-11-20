@@ -1,5 +1,7 @@
 #include <chrono>
+#include <iomanip>
 #include <iostream>
+#include <random>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -32,6 +34,7 @@ static void afficherAide(){
               << "  chercher <id>                          affiche le film\n"
               << "  ajouter <id> <annee> <duree> <titre>   ajoute un film\n"
               << "  supprimer <id>                         supprime le film\n"
+              << "  mesurer                                compare les temps de recherche\n"
               << "  aide                                   affiche cette liste\n"
               << "  quitter                                termine le programme\n";
 }
@@ -93,6 +96,81 @@ static void supprimer(ArbreB<Entree>& index, BaseFilms& base, int id){
 }
 
 /**
+ * Affiche une ligne du tableau des mesures.
+ *
+ * @param methode nom de la méthode mesurée
+ * @param recherches nombre de recherches faites
+ * @param secondes temps total des recherches
+ */
+static void afficherMesure(const std::string& methode, int recherches, double secondes){
+    std::ostringstream temps;
+    temps << std::fixed << std::setprecision(2) << secondes / recherches * 1e6;
+    std::cout << "  " << std::left << std::setw(26) << methode << std::right
+              << std::setw(8) << recherches << " recherches"
+              << std::setw(12) << temps.str() << " µs par recherche" << std::endl;
+}
+
+/**
+ * Compare le temps de recherche d'un film par id avec quatre méthodes :
+ * l'arbre B seul, l'arbre B suivi de la lecture dans SQLite, SQLite sans
+ * index et SQLite avec son propre index. L'index SQLite est supprimé à la fin.
+ *
+ * @param index arbre B qui associe chaque id à une position
+ * @param base base qui contient les films
+ */
+static void mesurer(const ArbreB<Entree>& index, BaseFilms& base){
+    std::vector<Entree> entrees = base.lireEntrees();
+    if(entrees.empty()){
+        std::cout << "la base est vide" << std::endl;
+        return;
+    }
+    std::mt19937 generateur(2026);
+    std::uniform_int_distribution<size_t> hasard(0, entrees.size() - 1);
+    auto idsAuHasard = [&](int n){
+        std::vector<int> ids;
+        for(int i = 0; i < n; i++)
+            ids.push_back(entrees[hasard(generateur)].id);
+        return ids;
+    };
+
+    std::cout << entrees.size() << " films, arbre B d'ordre " << ORDRE_INDEX
+              << " et de hauteur " << index.hauteur() << std::endl;
+
+    Film film;
+    int trouves = 0;
+
+    std::vector<int> ids = idsAuHasard(1000000);
+    auto debut = std::chrono::steady_clock::now();
+    for(int id : ids)
+        trouves += index.rechercher(Entree(id, 0)) != nullptr;
+    afficherMesure("arbre B seul", ids.size(), secondesDepuis(debut));
+
+    ids = idsAuHasard(10000);
+    debut = std::chrono::steady_clock::now();
+    for(int id : ids)
+        trouves += base.lire(index.rechercher(Entree(id, 0))->position, film);
+    afficherMesure("arbre B + lecture SQLite", ids.size(), secondesDepuis(debut));
+
+    ids = idsAuHasard(20);
+    debut = std::chrono::steady_clock::now();
+    for(int id : ids)
+        trouves += base.chercherParId(id, film);
+    afficherMesure("SQLite sans index", ids.size(), secondesDepuis(debut));
+
+    debut = std::chrono::steady_clock::now();
+    base.creerIndexSQLite();
+    std::cout << "  (index SQLite créé en " << secondesDepuis(debut) << " s)" << std::endl;
+    ids = idsAuHasard(10000);
+    debut = std::chrono::steady_clock::now();
+    for(int id : ids)
+        trouves += base.chercherParId(id, film);
+    afficherMesure("SQLite avec son index", ids.size(), secondesDepuis(debut));
+    base.supprimerIndexSQLite();
+
+    std::cout << "  " << trouves << " films trouvés au total" << std::endl;
+}
+
+/**
  * Exécute une ligne de commande tapée par l'utilisateur.
  *
  * @param ligne ligne lue au clavier
@@ -111,6 +189,11 @@ static bool executer(const std::string& ligne, ArbreB<Entree>& index, BaseFilms&
 
     if(commande == "aide"){
         afficherAide();
+        return true;
+    }
+
+    if(commande == "mesurer"){
+        mesurer(index, base);
         return true;
     }
 
